@@ -2,10 +2,7 @@
 use crate::OsType;
 use curl::Error as CurlError;
 use partialzip::PartialZipError;
-use std::{
-	error::Error as StdErr,
-	io::{Error as IoError, IntoInnerError},
-};
+use std::io::{Error as IoError, IntoInnerError};
 use thiserror::Error;
 use zip::result::ZipError;
 
@@ -27,17 +24,6 @@ pub enum ByondGetError {
 	Zip(#[from] ZipError),
 	#[error("I/O error: {0}")]
 	Io(#[from] IoError),
-	#[error(transparent)]
-	Other(Box<dyn StdErr + Send + Sync>),
-}
-
-impl ByondGetError {
-	pub fn boxed<Err>(err: Err) -> Self
-	where
-		Err: StdErr + Send + Sync + 'static,
-	{
-		ByondGetError::Other(Box::new(err))
-	}
 }
 
 impl From<PartialZipError> for ByondGetError {
