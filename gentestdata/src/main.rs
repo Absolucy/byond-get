@@ -29,21 +29,28 @@ fn get_files(version: u16, build: u16, os: OsType) {
 			url = os.url(version, build),
 		);
 	}
-	let mut extracted_files = glob(&format!("{}/**/*", temp_path.display()))
+	let mut lines = glob(&format!("{}/**/*", temp_path.display()))
 		.expect("failed to get contents of tempdir")
 		.filter_map(|entry| entry.ok())
 		.filter(|path| path.is_file())
 		.map(|path| {
-			path.strip_prefix(temp_path)
+			let stripped_path = path
+				.strip_prefix(temp_path)
 				.expect("failed to strip prefix")
 				.to_string_lossy()
 				.trim()
-				.replace('\\', "/")
+				.replace('\\', "/");
+			let hash = blake3::hash(&std::fs::read(path).expect("failed to read file")).to_hex();
+			format!("{stripped_path}\t{hash}")
 		})
 		.collect::<Vec<String>>();
-	extracted_files.sort();
+	lines.sort_by(|a, b| {
+		let a = a.split_once('\t').unwrap().0;
+		let b = b.split_once('\t').unwrap().0;
+		a.cmp(b)
+	});
 	let list_path = format!("tests/{os}/{version}.{build}.txt");
-	if let Err(err) = std::fs::write(&list_path, extracted_files.join("\n")) {
+	if let Err(err) = std::fs::write(&list_path, lines.join("\n")) {
 		panic!("Failed to write list of extracted files to {list_path}\n{err:?}");
 	}
 }

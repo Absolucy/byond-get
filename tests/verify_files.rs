@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Zlib
+use blake3::Hash;
 use byond_get::OsType;
 use datatest_stable::Utf8Path;
 use glob::glob;
-use std::collections::HashSet;
+use std::collections::HashMap;
 
-fn get_expected_paths(list: &str, full: bool) -> HashSet<String> {
+fn get_expected_paths(list: &str, full: bool) -> HashMap<String, Hash> {
 	list.trim()
 		.lines()
 		.map(|path| path.replace('\\', "/"))
@@ -15,10 +16,19 @@ fn get_expected_paths(list: &str, full: bool) -> HashSet<String> {
 				path.strip_prefix("bin/").map(str::to_owned)
 			}
 		})
-		.collect::<HashSet<String>>()
+		.map(|path| {
+			let (path, hash_hex) = path.split_once('\t').unwrap();
+			(path.to_owned(), Hash::from_hex(hash_hex).unwrap())
+		})
+		.collect::<HashMap<String, Hash>>()
 }
 
-fn download_and_list_files(version: u16, build: u16, os: OsType, full: bool) -> HashSet<String> {
+fn download_and_list_files(
+	version: u16,
+	build: u16,
+	os: OsType,
+	full: bool,
+) -> HashMap<String, Hash> {
 	let temp_dir = tempfile::tempdir().expect("failed to create temporary directory");
 	let temp_path = temp_dir.path();
 	if full {
@@ -33,13 +43,16 @@ fn download_and_list_files(version: u16, build: u16, os: OsType, full: bool) -> 
 		.filter_map(|entry| entry.ok())
 		.filter(|path| path.is_file())
 		.map(|path| {
-			path.strip_prefix(temp_path)
+			let stripped_path = path
+				.strip_prefix(temp_path)
 				.expect("failed to strip prefix")
 				.to_string_lossy()
 				.trim()
-				.replace("\\", "/")
+				.replace('\\', "/");
+			let hash = blake3::hash(&std::fs::read(path).expect("failed to read file"));
+			(stripped_path, hash)
 		})
-		.collect::<HashSet<String>>()
+		.collect::<HashMap<String, Hash>>()
 }
 
 fn verify_download(
