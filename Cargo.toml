@@ -2,7 +2,7 @@
 name = "byond-get"
 version = "0.3.0"
 authors = ["Lucy <lucy@absolucy.moe>"]
-edition = "2021"
+edition = "2024"
 license = "Zlib"
 
 [[test]]
@@ -27,5 +27,5 @@ default = ["static-curl"]
 static-curl = ["curl/static-curl", "curl/static-ssl"]
 
 [workspace]
-members = [".", "gentestdata"]
+members = [".", "cli", "gentestdata"]
 default-members = ["."]
