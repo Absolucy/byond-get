@@ -52,11 +52,11 @@ pub fn download_full(version: u16, build: u16, os: OsType, path: impl AsRef<Path
 		file.into_inner()?.sync_all()?;
 
 		#[cfg(unix)]
-		if !file_path.ends_with(".so") {
+		if extract_path.extension().unwrap_or_default() != "so" {
 			use std::{fs::Permissions, os::unix::fs::PermissionsExt};
-			let mut perms = std::fs::metadata(path)?.permissions();
+			let mut perms = std::fs::metadata(extract_path)?.permissions();
 			perms.set_mode(perms.mode() | 0o111);
-			std::fs::set_permissions(download_path, perms)?;
+			std::fs::set_permissions(extract_path, perms)?;
 		}
 	}
 	Ok(())
