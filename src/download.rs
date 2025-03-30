@@ -54,7 +54,7 @@ pub fn download_full(version: u16, build: u16, os: OsType, path: impl AsRef<Path
 		#[cfg(unix)]
 		if extract_path.extension().unwrap_or_default() != "so" {
 			use std::{fs::Permissions, os::unix::fs::PermissionsExt};
-			let mut perms = std::fs::metadata(extract_path)?.permissions();
+			let mut perms = std::fs::metadata(&extract_path)?.permissions();
 			perms.set_mode(perms.mode() | 0o111);
 			std::fs::set_permissions(extract_path, perms)?;
 		}
